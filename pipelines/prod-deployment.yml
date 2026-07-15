@@ -1,0 +1,33 @@
+name: Production Deployment
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+tasks:
+- script: |
+    echo "Running security scan..."
+    trivy image --severity HIGH,CRITICAL myapp:$(Build.BuildId)
+  displayName: 'Security Vulnerability Scan'
+
+- task: Docker@2
+  inputs:
+    command: buildAndPush
+    repository: 'myapp'
+    dockerfile: '**/Dockerfile'
+    tags: |
+      $(Build.BuildId)
+      latest
+
+- task: AzureWebAppContainer@1
+  inputs:
+    appName: 'myapp-prod'
+    containerRegistry: 'myregistry.azurecr.io'
+    image: 'myapp:$(Build.BuildId)'
+
+- script: |
+    curl -f http://myapp-prod.azurewebsites.net/health || exit 1
+  displayName: 'Smoke Test'
