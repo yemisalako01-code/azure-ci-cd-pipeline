@@ -1,0 +1,10 @@
+parameters:
+  - name: cacheKey
+    type: string
+    default: 'npm-cache'
+steps:
+- task: Cache@2
+  inputs:
+    key: '$(System.JobName) - npm'
+    path: node_modules
+  displayName: 'Cache NPM Dependencies'
